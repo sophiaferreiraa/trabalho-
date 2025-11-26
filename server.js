@@ -63,7 +63,6 @@ app.post("/metas", async (req, res) => {
   } catch (err) { res.status(500).send("Erro criar meta"); }
 });
 
-// ROTA NOVA: Editar Meta
 app.put("/metas/:id", async (req, res) => {
   const { id } = req.params;
   const { titulo, descricao, progresso, vencimento } = req.body;
@@ -76,7 +75,6 @@ app.put("/metas/:id", async (req, res) => {
   } catch (err) { res.status(500).send("Erro editar meta"); }
 });
 
-// ROTA NOVA: Excluir Meta
 app.delete("/metas/:id", async (req, res) => {
   const { id } = req.params;
   try {
@@ -89,6 +87,8 @@ app.delete("/metas/:id", async (req, res) => {
 app.get("/tarefas/:usuarioId", async (req, res) => {
   try {
     const { usuarioId } = req.params;
+    // Trazemos todas e ordenamos no front, ou poderíamos ordenar aqui.
+    // Manter ID ASC como padrão de inserção, a lógica de negócio fica no front ou query complexa.
     const result = await pool.query("SELECT * FROM tarefas WHERE usuario_id = $1 ORDER BY id ASC", [usuarioId]);
     const tarefas = result.rows.map(t => ({
       ...t,
@@ -110,20 +110,21 @@ app.post("/tarefas", async (req, res) => {
   } catch (err) { res.status(500).send("Erro criar tarefa"); }
 });
 
-// ROTA NOVA: Editar Tarefa (Conteúdo)
+// --- ATUALIZAÇÃO IMPORTANTE AQUI ---
+// Adicionado o campo 'cor' no UPDATE para salvar a mudança de prioridade
 app.put("/tarefas/editar/:id", async (req, res) => {
   const { id } = req.params;
-  const { titulo, horario, meta_id } = req.body;
+  const { titulo, horario, meta_id, cor } = req.body; // Adicionado 'cor'
   try {
     await pool.query(
-      "UPDATE tarefas SET titulo = $1, horario = $2, meta_id = $3 WHERE id = $4",
-      [titulo, horario, meta_id || null, id]
+      "UPDATE tarefas SET titulo = $1, horario = $2, meta_id = $3, cor = $4 WHERE id = $5",
+      [titulo, horario, meta_id || null, cor, id]
     );
     res.sendStatus(200);
   } catch (err) { res.status(500).send("Erro editar tarefa"); }
 });
+// -----------------------------------
 
-// Atualizar Status (Checkbox)
 app.put("/tarefas/:id", async (req, res) => {
   const { id } = req.params;
   const { completa } = req.body;
@@ -133,7 +134,6 @@ app.put("/tarefas/:id", async (req, res) => {
   } catch (err) { res.status(500).send("Erro status"); }
 });
 
-// ROTA NOVA: Excluir Tarefa
 app.delete("/tarefas/:id", async (req, res) => {
   const { id } = req.params;
   try {
